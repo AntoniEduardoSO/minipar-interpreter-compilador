@@ -11,21 +11,22 @@ def main():
         inputs = []
 
         if program_name == 'calculadora.mp':
-            input1 = input("Escreva o primeiro número:\n")
+            input1 = input("Escreva o input1:\n")
             inputs.append(input1)
-            input2 = input("Escreva o segundo número:\n")
+            input2 = input("Escreva o input2:\n")
             inputs.append(input2)
-            cond = input('Escreva o operador ("-","+","*","/"):\n')
+            cond = input('Escreva o condicional ("-","+","*","/"):\n')
             inputs.append(cond)
         else:
+            # Para outros programas, você pode adicionar lógica semelhante
             print("Programa não reconhecido ou não há entradas adicionais necessárias.")
 
         message = '\n'.join([program_name] + inputs)
-        s.sendall(message.encode('utf-8'))
+        s.sendall(message.encode())
 
         data = s.recv(4096)
         print('Resultado:')
-        print(data.decode('utf-8'))
+        print(data.decode())
 
 if __name__ == '__main__':
     main()

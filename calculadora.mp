@@ -5,7 +5,8 @@ valor1 = Input()
 valor2 = Input()
 
 operation = Input()
-
+Output("operation: ", operation)
+Output("\n")
 
 result = 0
 

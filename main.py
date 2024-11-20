@@ -16,14 +16,14 @@ def handle_client(conn, addr):
         data = conn.recv(4096)
         if not data:
             return
-        message = data.decode('utf-8')
+        message = data.decode()
         lines = message.split('\n')
         program_file = lines[0]
         inputs = lines[1:]  # As entradas fornecidas pelo cliente
 
         if not os.path.exists(program_file):
             response = f"Erro: O arquivo '{program_file}' não foi encontrado."
-            conn.sendall(response.encode('utf-8'))
+            conn.sendall(response.encode())
             return
 
         entrada = read_program_from_file(program_file)
@@ -35,15 +35,15 @@ def handle_client(conn, addr):
             executor = Executor(inputs=inputs)
             executor.execute_stmt(result)
             output = ''.join(executor.outputs)
-            conn.sendall(output.encode('utf-8'))
+            conn.sendall(output.encode())
         else:
-            conn.sendall("Erro ao executar o programa.".encode('utf-8'))
+            conn.sendall(b"Erro ao executar o programa.")
 
     finally:
         conn.close()
 
 def read_program_from_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, 'r') as file:
         program = file.read()
     return program
 
