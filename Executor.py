@@ -10,6 +10,17 @@ class Executor:
         self.outputs = []
         self.current_input_index = 0
 
+    def to_number(self, value):
+        if isinstance(value, (int, float)):
+            return value
+        try:
+            return int(value)
+        except ValueError:
+            try:
+                return float(value)
+            except ValueError:
+                return value  # Retorna a string original se não for número
+
     # Funções de execução para cada tipo de instrução
     def execute_stmt(self, stmt):
         if stmt[0] == 'SEQ':
@@ -38,13 +49,8 @@ class Executor:
                     self.execute_stmt(s)
 
         elif stmt[0] == 'INPUT':
-            var_name = stmt[1]
-            if self.current_input_index < len(self.inputs):
-                var_value = self.inputs[self.current_input_index]
-                self.current_input_index += 1
-            else:
-                var_value = input()
-            self.symbol_table[var_name] = int(var_value) if var_value.isdigit() else var_value
+            # Esta parte pode ser deixada em branco, pois o Input será tratado na atribuição
+            pass
 
         elif stmt[0] == 'OUTPUT':
             if isinstance(stmt[1], tuple):
@@ -56,36 +62,26 @@ class Executor:
         elif stmt[0] == '=':
             var_name = stmt[1]
             value = stmt[2]
-            value = self.evaluate_expr(value)
-            self.symbol_table[var_name] = value
+            if isinstance(value, tuple) and value[0] == 'INPUT':
+                # Tratar atribuição com Input()
+                if self.current_input_index < len(self.inputs):
+                    var_value = self.inputs[self.current_input_index]
+                    self.current_input_index += 1
+                else:
+                    var_value = input()
+                self.symbol_table[var_name] = self.to_number(var_value)
+            else:
+                value = self.evaluate_expr(value)
+                self.symbol_table[var_name] = value
 
-        # Caso seja uma declaração de canal
-        elif stmt[0] == 'C_CHANNEL':
-            self.channels[stmt[1]] = (stmt[2], stmt[3])
-
-        # Envio e recepção de dados pelo canal
-        elif not isinstance(stmt[0], tuple) and stmt[0] in self.channels:
-            if stmt[1] == 'SEND':
-                channel_name = stmt[0]
-                channel = self.channels.get(channel_name)
-                if channel:
-                    # Implementação específica para envio de dados
-                    pass  # Você pode implementar conforme necessário
-
-            elif stmt[1] == 'RECEIVE':
-                channel_name = stmt[0]
-                channel = self.channels.get(channel_name)
-                if channel:
-                    # Implementação específica para recepção de dados
-                    pass  # Você pode implementar conforme necessário
-
+        # Outras instruções...
         elif isinstance(stmt, tuple):
             for s in stmt:
                 self.execute_stmt(s)
 
     def execute_output(self, v):
-        var_value = self.symbol_table.get(v, v)
-        formatted_output = str(var_value).replace("\\n", "\n")
+        value = self.evaluate_expr(v)
+        formatted_output = str(value).replace("\\n", "\n")
         self.outputs.append(formatted_output)
 
     def execute_bool(self, expr):
@@ -94,6 +90,9 @@ class Executor:
 
             left_value = self.evaluate_expr(left)
             right_value = self.evaluate_expr(right)
+
+            left_value = self.to_number(left_value)
+            right_value = self.to_number(right_value)
 
             if op == '<':
                 return left_value < right_value
@@ -111,18 +110,20 @@ class Executor:
             return bool(self.evaluate_expr(expr))
 
     def evaluate_expr(self, expr):
-        if isinstance(expr, int):
+        if isinstance(expr, (int, float)):
             return expr
         elif isinstance(expr, str):
-            if expr.isdigit():
-                return int(expr)
-            else:
-                return self.symbol_table.get(expr, expr)
+            value = self.symbol_table.get(expr, expr)
+            return self.to_number(value)
         elif isinstance(expr, tuple):
             if len(expr) == 3:
                 op, left, right = expr
                 left_value = self.evaluate_expr(left)
                 right_value = self.evaluate_expr(right)
+
+                left_value = self.to_number(left_value)
+                right_value = self.to_number(right_value)
+
                 if op == '+':
                     return left_value + right_value
                 elif op == '-':
